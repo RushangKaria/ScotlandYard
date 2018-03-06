@@ -83,7 +83,7 @@ class ExactInference:
             self.beliefs[mrxPos]=1  # we are sure about the position of Mr.X
         else:
             new_beliefs = util.Counter()
-            
+
             ticket = ticketList[self.nextMoveToObserve]
             for old_pos in self.beliefs.keys():
                 new_pos_dist = distributionFrom(old_pos, ticket, gameState)

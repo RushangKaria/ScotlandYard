@@ -4,6 +4,7 @@ Created on 07/set/2016
 @author: Lorenzo Selvatici
 '''
 
+import random
 import util
 from settings import Settings
 from rules import Rules, Action
@@ -296,7 +297,88 @@ class SmartKeyboardCop(Cop, KeyboardAgent):
         #####
         return KeyboardAgent.getAction(self, gameState, display)
 
+class RandomAgent(Agent):
 
+    """
+        A rather dumb agent whose only purpose is to act randomly.
+
+        However, random is still interesting, since a random walk on a graph is still complete.
+    """
+
+    # The 'simulated' thinking time in milliseconds.
+    #
+    # This helps control the frequency of the GUI update to make it easy on the human eyes.
+    THINKING_TIME_IN_MS = 200
+
+    def getAction(self, gameState, display):
+
+        """ Returns a random action from the set of legal actions possible for the agent given the current state.
+        
+            Args:
+                gameState:
+                    The current game state.
+                display:
+                    The display manager.
+            Returns:
+                A legal action for the agent, None if no legal actions were possible.
+            
+        """
+
+        # Get the agent's current position and make sure that the game state agrees with the same.
+        currentPosition = self.getAgentState().getPosition()
+        assert gameState.data.getAgentState(self.getIndex()).getPosition() == currentPosition
+
+        # Make sure that the state is asking for an action.
+        assert "askForAction" in dir(display)
+
+        # Get the set of legal actions that are possible for this agent given the current game state.
+        legalActions = Rules.getLegalActions(self, gameState.data)
+
+        # If there are no legal actions, then skip the turn for the agent.
+        # Else select a random action from the list of possible legal actions. All legal actions are guaranteed to move
+        # the agent from their current location to a new location.
+        if legalActions is None or len(legalActions) == 0:
+
+            display.showMessage("No possible actions for %s[%s] at %s.\n" % (str(self.role),
+                 str(self.index),
+                 str(currentPosition)))
+            display.wait(ms=self.THINKING_TIME_IN_MS)
+            return None
+        else:
+
+            index = random.randint(0, len(legalActions) - 1)
+            display.wait(ms=self.THINKING_TIME_IN_MS)
+            return legalActions[index]
+
+class RandomMrX(RandomAgent, MrX):
+
+    def __init__(self, agentState = None):
+
+        MrX.__init__(self, agentState)
+        self.type = "RandomMrX"
+
+    def deepCopy(self):
+
+        return RandomMrX(self.agentState.deepCopy())
+
+    def __repr__(self):
+
+        return MrX.__repr__(self)
+
+    def performAction(self, action):
+
+        MrX.performAction(self, action)
+
+class RandomCop(RandomAgent, Cop):
+
+    def __init__(self, index, agentState = None):
+
+        Cop.__init__(self, index, agentState)
+        self.type = "RandomCop"
+
+    def deepCopy(self):
+
+        return RandomCop(self.index, self.agentState.deepCopy())
 
 if __name__ == '__main__':
     # AgentState tests
