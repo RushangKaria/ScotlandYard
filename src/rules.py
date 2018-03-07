@@ -118,6 +118,10 @@ class Action:
     def __eq__(self, other):
         return self.start==other.start and self.end==other.end and self.ticket==other.ticket
     
+    def __hash__(self):
+
+        return hash(id(self.__repr__))
+
     def __ne__(self, other):
         return not self == other
     

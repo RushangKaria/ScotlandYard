@@ -297,6 +297,117 @@ class SmartKeyboardCop(Cop, KeyboardAgent):
         #####
         return KeyboardAgent.getAction(self, gameState, display)
 
+class DistanceMinimizerCop(Agent, Cop):
+    BELIEF_EPSILON = 0.000000001
+
+    INFINITY = 999
+
+    def __init__(self, index, agentState = None, inference = None):
+
+        Cop.__init__(self, index, agentState)
+        self.type = "DistanceMinimizerCop"
+
+        if inference is None:
+            self.inference = ExactInference()
+        else:
+            self.inference = inference
+
+    def deepCopy(self):
+
+        return DistanceMinimizerCop(self.index, self.agentState.deepCopy(), self.inference)
+
+    def getMovesToState(self, finalState, gameState, visited, totalMoves):
+
+        if self.getAgentState().getPosition() == finalState:
+            return totalMoves
+        else:
+
+            currentPosition = self.getAgentState().getPosition()
+            legalActions = Rules.getLegalActions(self, gameState.data)
+            agentIndex = self.getIndex()
+
+            # If not more legal actions possible from here, return INFINITY
+            if legalActions is None or len(legalActions) == 0:
+
+                return self.INFINITY
+            else:
+
+                moves = self.INFINITY
+                for legalAction in legalActions:
+
+                    if legalAction.getEnd() not in visited:
+
+                        # Transition the agent, which creates a new copy of the game state.
+                        gameStateCopy = gameState.generateSuccessor(agentIndex, legalAction, False)
+                        agentCopy = gameStateCopy.data.getAgent(agentIndex)
+
+                        visited.append(agentCopy.getAgentState().getPosition())
+                        new_moves = agentCopy.getMovesToState(finalState, gameStateCopy, visited, totalMoves + 1)
+
+                        if new_moves < moves:
+
+#                            print "Better move: [%u]->[%u] = %u" %(self.getAgentState().getPosition(),
+#                                finalState,
+#                                new_moves)
+                            moves = new_moves
+
+                return moves
+
+    def getAction(self, gameState, display):
+
+        ticketList, notHiddenMoves = gameState.getMrXEvidences()
+        self.inference.updateBeliefs(ticketList, notHiddenMoves, gameState.deepCopy())
+        beliefsDistribution = self.inference.getBeliefsDistribution()
+        mostLikelyPositions = beliefsDistribution.argMax()  # the list of most likely positions
+        agentIndex = self.getIndex()
+
+        ##### TO CHANGE (WHEN IMPLEMENTED THE GUI DISPLAYER OF BELIEFS DISTRIBUTION)
+        # print beliefsDistribution
+        # print mostLikelyPositions
+        #####
+
+        currentPosition = self.getAgentState().getPosition()
+        legalActions = Rules.getLegalActions(self, gameState.data)
+
+        if legalActions is None or len(legalActions) == 0:
+
+            display.showMessage("No possible actions for %s[%s] at %s.\n" % (str(self.role),
+                 str(self.index),
+                 str(currentPosition)))
+            display.wait(ms=1000)
+            return None
+        else:
+
+            actionCosts = {}
+
+            for legalAction in legalActions:
+
+                actionCosts[legalAction] = 0.0
+
+                # Transition the agent, which creates a new copy of the game state.
+                gameStateCopy = gameState.generateSuccessor(agentIndex, legalAction, False)
+                agentCopy = gameStateCopy.data.getAgent(agentIndex)
+
+                # for all the belief states, get the total number of moves.
+                for state in beliefsDistribution:
+
+                    visited = [ agentCopy.getAgentState().getPosition() ]
+                    moves = agentCopy.getMovesToState(state, gameStateCopy, visited, 1)
+
+                    actionCosts[legalAction] = actionCosts[legalAction] + moves * beliefsDistribution[state]
+
+            bestAction = None
+            maxCost = self.INFINITY * len(actionCosts)
+
+            for action in actionCosts:
+
+                if actionCosts[action] < maxCost:
+
+                    bestAction = action
+                    maxCost = actionCosts[action]
+
+            return action
+
 class RandomAgent(Agent):
 
     """

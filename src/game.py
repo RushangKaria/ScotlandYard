@@ -137,14 +137,15 @@ class GameState:
         return ticket_history, not_hidden_moves 
           
     
-    def generateSuccessor(self, agentIndex, action):
+    def generateSuccessor(self, agentIndex, action, assertOn = True):
         """
         Returns a new instance of GameState where the agent at the specified agentIndex has taken his action.
         AgentIndex is an integer in the interval [0, numberOfCops]. Index 0 is Mr. X.
         """
         # assert it's not a final state
-        turn = AgentRole.Mr_X if agentIndex==0 else AgentRole.COP
-        assert not self.isEndState(turn)[0] # check the first boolean element of the tuple
+        if assertOn == True:
+            turn = AgentRole.Mr_X if agentIndex==0 else AgentRole.COP
+            assert not self.isEndState(turn)[0] # check the first boolean element of the tuple
         
         new_state = self.deepCopy()
         agent = new_state.data.getAgent(agentIndex)
