@@ -340,9 +340,10 @@ class DistanceMinimizerCop(Agent, Cop):
                         # Transition the agent, which creates a new copy of the game state.
                         gameStateCopy = gameState.generateSuccessor(agentIndex, legalAction, False)
                         agentCopy = gameStateCopy.data.getAgent(agentIndex)
+                        visitedCopy = visited[:]
 
-                        visited.append(agentCopy.getAgentState().getPosition())
-                        new_moves = agentCopy.getMovesToState(finalState, gameStateCopy, visited, totalMoves + 1)
+                        visitedCopy.append(agentCopy.getAgentState().getPosition())
+                        new_moves = agentCopy.getMovesToState(finalState, gameStateCopy, visitedCopy, totalMoves + 1)
 
                         if new_moves < moves:
 
@@ -391,7 +392,7 @@ class DistanceMinimizerCop(Agent, Cop):
                 # for all the belief states, get the total number of moves.
                 for state in beliefsDistribution:
 
-                    visited = [ agentCopy.getAgentState().getPosition() ]
+                    visited = [ currentPosition, agentCopy.getAgentState().getPosition() ]
                     moves = agentCopy.getMovesToState(state, gameStateCopy, visited, 1)
 
                     actionCosts[legalAction] = actionCosts[legalAction] + moves * beliefsDistribution[state]
@@ -406,7 +407,8 @@ class DistanceMinimizerCop(Agent, Cop):
                     bestAction = action
                     maxCost = actionCosts[action]
 
-            return action
+            display.wait(ms=200)
+            return bestAction
 
 class RandomAgent(Agent):
 
@@ -419,7 +421,7 @@ class RandomAgent(Agent):
     # The 'simulated' thinking time in milliseconds.
     #
     # This helps control the frequency of the GUI update to make it easy on the human eyes.
-    THINKING_TIME_IN_MS = 200
+    THINKING_TIME_IN_MS = 10
 
     def getAction(self, gameState, display):
 
