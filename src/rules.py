@@ -120,7 +120,8 @@ class Action:
     
     def __hash__(self):
 
-        return hash(id(self.__repr__))
+        stringRepr = str(self.start) + " -> " + str(self.end) + " " + self.ticket
+        return stringRepr.__hash__()
 
     def __ne__(self, other):
         return not self == other
