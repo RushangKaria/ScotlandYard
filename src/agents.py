@@ -297,24 +297,14 @@ class SmartKeyboardCop(Cop, KeyboardAgent):
         #####
         return KeyboardAgent.getAction(self, gameState, display)
 
-class DistanceMinimizerCop(Agent, Cop):
-    BELIEF_EPSILON = 0.000000001
+class DistanceMinimizer(Agent):
 
     INFINITY = 999
 
-    def __init__(self, index, agentState = None, inference = None):
+    def selectRandomAction(self, legalActions):
 
-        Cop.__init__(self, index, agentState)
-        self.type = "DistanceMinimizerCop"
-
-        if inference is None:
-            self.inference = ExactInference()
-        else:
-            self.inference = inference
-
-    def deepCopy(self):
-
-        return DistanceMinimizerCop(self.index, self.agentState.deepCopy(), self.inference)
+            index = random.randint(0, len(legalActions) - 1)
+            return legalActions[index]
 
     def getMovesToState(self, finalState, gameState, visited, totalMoves):
 
@@ -347,12 +337,30 @@ class DistanceMinimizerCop(Agent, Cop):
 
                         if new_moves < moves:
 
-#                            print "Better move: [%u]->[%u] = %u" %(self.getAgentState().getPosition(),
-#                                finalState,
-#                                new_moves)
+    #                            print "Better move: [%u]->[%u] = %u" %(self.getAgentState().getPosition(),
+    #                                finalState,
+    #                                new_moves)
                             moves = new_moves
 
                 return moves
+
+class DistanceMinimizerCop(DistanceMinimizer, Cop):
+
+    BELIEF_EPSILON = 0.000000001
+
+    def __init__(self, index, agentState = None, inference = None):
+
+        Cop.__init__(self, index, agentState)
+        self.type = "DistanceMinimizerCop"
+
+        if inference is None:
+            self.inference = ExactInference()
+        else:
+            self.inference = inference
+
+    def deepCopy(self):
+
+        return DistanceMinimizerCop(self.index, self.agentState.deepCopy(), self.inference)
 
     def getAction(self, gameState, display):
 
@@ -408,7 +416,71 @@ class DistanceMinimizerCop(Agent, Cop):
                     maxCost = actionCosts[action]
 
             display.wait(ms=200)
+
+            if bestAction is None:
+                #print "Selecting random action!!"
+                bestAction = self.selectRandomAction(legalActions)
+
             return bestAction
+
+class DistanceMaximizerMrX(MrX, DistanceMinimizer):
+
+    def __init__(self, agentState = None):
+
+        MrX.__init__(self, agentState)
+        self.type = "DistanceMaximizerMrX"
+
+    def deepCopy(self):
+
+        return DistanceMaximizerMrX(self.agentState.deepCopy())
+
+    def getAction(self, gameState, display):
+
+        currentPosition = self.getAgentState().getPosition()
+        legalActions = Rules.getLegalActions(self, gameState.data)
+
+        # At this point, the game should at least have one move remaining.
+        assert legalActions is not None or len(legalActions) > 0
+
+        actionCosts = {}
+        for legalAction in legalActions:
+
+            actionCosts[legalAction] = 0
+
+            for copIndex in range(1, gameState.numberOfCops() + 1):
+
+                # Create a copy of the game state.
+                gameStateCopy = gameState.deepCopy()
+                copAgentCopy = gameStateCopy.data.getAgent(copIndex)
+
+                # Get the minimum number of moves from the current cop position to the destination of Mr. X's action.
+                visited = [ copAgentCopy.getAgentState().getPosition() ]
+                moves = copAgentCopy.getMovesToState(legalAction.getEnd(), gameStateCopy, visited, 0)
+
+                # If the game will be over in the very next move, then over-compensate so that this action will never
+                # be selected as long as there are better actions.
+                if moves <= 1:
+                    moves = -self.INFINITY * gameState.numberOfCops()
+
+                actionCosts[legalAction] = actionCosts[legalAction] + moves
+
+        bestAction = None
+        bestCost = -self.INFINITY
+        for legalAction in legalActions:
+
+            if actionCosts[legalAction] >= bestCost:
+
+                bestCost = actionCosts[legalAction]
+                bestAction = legalAction
+
+        display.wait(ms=1000)
+
+        if bestAction is None:
+
+            #print "Selecting random action!!"
+            bestAction = self.selectRandomAction(legalActions)
+
+        return bestAction
 
 class RandomAgent(Agent):
 

@@ -3,9 +3,9 @@ LAYOUT_FILENAME -> DEFAULT
 DISPLAY_TYPE -> GUI
 MAX_NUM_MOVES -> 24
 INITIAL_MrX_POSITION -> random
-MrX_TYPE -> Random
+MrX_TYPE -> DistanceMaximizer
 COPS_TYPE -> DistanceMinimizer
-INITIAL_COPS_POSITION -> random, random, random, random, random
+INITIAL_COPS_POSITION -> random, random, random, random
 NOT_HIDDEN_MOVES -> 3, 8, 13, 18, 23
 MrX_TICKETS -> TAXI=999; BUS=999; UNDERGROUND=999; BLACK=5
 COPS_TICKETS -> TAXI=11; BUS=8; UNDERGROUND=3
